@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Calculadora de tiempo de series de TV</title>
+	<style>
+		body {
+			font-family: Arial, sans-serif;
+			margin: 0;
+			padding: 0;
+		}
+
+		.container {
+			width: 80%;
+			max-width: 1200px;
+			margin: 0 auto;
+			padding: 20px;
+		}
+
+		.result {
+			margin-top: 20px;
+			border: 1px solid #ccc;
+			padding: 20px;
+			background-color: #f9f9f9;
+		}
+
+		.result h2 {
+			margin-top: 0;
+		}
+
+		.result img {
+			float: left;
+			margin-right: 20px;
+		}
+	</style>
+</head>
+<body>
+	<div class="container">
+		<h1>Calculadora de tiempo de series de TV</h1>
+		<p>Ingresa el nombre de una serie de TV y la cantidad de episodios que quieres ver por día para conocer cuánto tiempo te tomará completarla.</p>
+		<form>
+			<label for="serie">Nombre de la serie:</label>
+			<input type="text" id="serie" name="serie" required>
+			<label for="episodios">Episodios por día:</label>
+			<input type="number" id="episodios" name="episodios" min="1" max="24" value="1" required>
+			<button type="submit">Calcular</button>
+		</form>
+		<div class="result" id="result"></div>
+	</div>
+
+	<script>
+		const form = document.querySelector('form');
+		const resultDiv = document.querySelector('#result');
+
+		form.addEventListener('submit', (event) => {
+			event.preventDefault();
+
+			const serie = document.querySelector('#serie').value.trim();
+			const episodiosPorDia = Number(document.querySelector('#episodios').value);
+
+			const apiKey = 'YOUR_API_KEY_HERE';
+			const apiUrl = `https://api.themoviedb.org/3/search/tv?api_key=${apiKey}&query=${encodeURIComponent(serie)}`;
+
+			resultDiv.innerHTML = 'Buscando información de la serie...';
+
+			fetch(apiUrl)
+				.then(response => response.json())
+				.then(data => {
+					if (data.results.length === 0) {
+						resultDiv.innerHTML = 'No se encontraron resultados para la serie ingresada. Por favor, inténtalo de nuevo.';
+						return;
+					}
+
+					const seriesData = data.results[0];
+					const totalEpisodes = seriesData.number_of_episodes;
+					const episodeDuration = seriesData.episode_run_time[0]; // en minutos
+					const totalDuration = totalEpisodes * episodeDuration; // en minutos
+					const totalHours = Math.floor(totalDuration / 60);
+					const totalMinutes = totalDuration % 60;
+					const episodesPerDay = episodiosPorDia;
+					const totalDays = Math.ceil(totalEpisodes / episodesPerDay);
+
+					const image = seriesData.poster_path ? `<img src="https://image.tmdb.org/t/p/w500${seriesData.poster_path}" alt="${seriesData.name}">` : '';
+					const genre = seriesData.genres.map(genre => genre
+                    `${genre.name}`).join(', ');
+				const overview = seriesData.overview;
+
+				const resultHtml = `
+					${image}
+					<h2>${seriesData.name}</h2>
+					<p><strong>Género:</strong> ${genre}</p>
+					<p><strong>Sinopsis:</strong> ${overview}</p>
+					<p><strong>Total de episodios:</strong> ${totalEpisodes}</p>
+					<p><strong>Duración por episodio:</strong> ${episodeDuration} minutos</p>
+					<p><strong>Tiempo total:</strong> ${totalHours} horas y ${totalMinutes} minutos</p>
+					<p><strong>Episodios por día:</strong> ${episodesPerDay}</p>
+					<p><strong>Tiempo estimado para completar la serie:</strong> ${totalDays} días</p>
+				`;
+
+				resultDiv.innerHTML = resultHtml;
+			})
+			.catch(error => {
+				console.error(error);
+				resultDiv.innerHTML = 'Ha ocurrido un error. Por favor, inténtalo de nuevo más tarde.';
+			});
+	});
+</script>
+</body>
+</html>
